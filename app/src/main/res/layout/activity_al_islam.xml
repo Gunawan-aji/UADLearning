@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Waktu Sholat Yogyakarta"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/uad_blue"
+            android:layout_marginBottom="4dp"/>
+
+        <TextClock
+            android:id="@+id/tvDateToday"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="EEEE, d MMMM yyyy"
+            android:format24Hour="EEEE, d MMMM yyyy"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="20dp"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="2dp"
+            android:layout_marginBottom="24dp">
+
+            <RelativeLayout
+                android:padding="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toStartOf="@+id/switchMainAlarm"
+                    android:layout_alignParentStart="true">
+
+                    <TextView
+                        android:text="Pengingat Adzan"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:textColor="#212121"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:text="Aktifkan notifikasi dan suara adzan"
+                        android:textSize="12sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchMainAlarm"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Jadwal Sholat Hari Ini"
+            android:textStyle="bold"
+            android:textColor="#444444"
+            android:layout_marginBottom="12dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <include layout="@layout/item_sholat_row" android:id="@+id/rowSubuh" />
+            <include layout="@layout/item_sholat_row" android:id="@+id/rowDzuhur" />
+            <include layout="@layout/item_sholat_row" android:id="@+id/rowAshar" />
+            <include layout="@layout/item_sholat_row" android:id="@+id/rowMaghrib" />
+            <include layout="@layout/item_sholat_row" android:id="@+id/rowIsya" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="*Jadwal berdasarkan lokasi Universitas Ahmad Dahlan"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:textStyle="italic"
+            android:textSize="11sp"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

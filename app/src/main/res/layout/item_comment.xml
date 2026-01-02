@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/tvCommentUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Nama User"
+        android:textStyle="bold"
+        android:textColor="@color/uad_blue"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvCommentMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Isi komentar di sini..."
+        android:textColor="#333333"
+        android:textSize="14sp" />
+</LinearLayout>

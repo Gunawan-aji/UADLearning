@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "808156178028",
+    "project_id": "uadlearning",
+    "storage_bucket": "uadlearning.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808156178028:android:685df894899e02f6c95a49",
+        "android_client_info": {
+          "package_name": "com.uad.uadlearningapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZB09WpPeQx4PqGUK5BN4ltpDK5emzqZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

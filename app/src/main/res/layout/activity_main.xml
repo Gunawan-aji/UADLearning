@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbarTask"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/uad_blue"
+                android:elevation="2dp"
+                app:title="UAD Learning"
+                app:titleTextColor="#FFFFFFFF"
+                app:navigationIcon="@drawable/ic_menu2">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/btnAccount"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_gravity="end"
+                    android:layout_marginEnd="16dp"
+                    android:src="@drawable/user"
+                    app:civ_border_color="#FFFFFFFF"
+                    app:civ_border_width="1dp" />
+            </com.google.android.material.appbar.MaterialToolbar>
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fillViewport="true"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/ModernCardStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="2dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <TextView
+                                style="@style/HeaderText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Minggu ini"
+                                android:textStyle="bold"
+                                android:textSize="18sp"/>
+
+                            <TextView
+                                android:id="@+id/tvTaskSummary"
+                                style="@style/BodyText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="Tidak ada tugas yang perlu dikerjakan segera" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:id="@+id/tvEmptyState"
+                        style="@style/BodyText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:layout_marginTop="32dp"
+                        android:text="Belum ada kelas"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvTasks"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:nestedScrollingEnabled="false" />
+
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
+        </LinearLayout>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fabAdd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="24dp"
+            android:src="@android:drawable/ic_input_add"
+            app:tint="@color/white"
+            app:backgroundTint="#1A73E8"
+            app:elevation="6dp" />
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navView"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:itemIconTint="#5F6368"
+        app:itemTextColor="#202124"
+        app:menu="@menu/drawer_menu" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,0 +1,7 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_kelas" android:title="Kelas" android:icon="@drawable/kelas" />
+    <item android:id="@+id/menu_kalender" android:title="Kalender Akademik UAD" android:icon="@drawable/kalender" />
+    <item android:id="@+id/menu_islam" android:title="Al-islam" android:icon="@drawable/islam" />
+    <item android:id="@+id/menu_pesan" android:title="Lapor BSI" android:icon="@drawable/pesan" />
+    <item android:id="@+id/menu_setting" android:title="Setelan" android:icon="@drawable/setting" />
+</menu>
