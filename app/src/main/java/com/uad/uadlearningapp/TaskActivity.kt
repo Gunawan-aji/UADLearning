@@ -17,9 +17,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.cloudinary.android.MediaManager
+import com.cloudinary.android.callback.ErrorInfo
+import com.cloudinary.android.callback.UploadCallback
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.storage.FirebaseStorage
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,12 +46,15 @@ class TaskActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_task)
 
-        // 1. Setup UI Dasar
+        // --- 1. INISIALISASI CLOUDINARY ---
+        initCloudinary()
+
+        // 2. Setup UI Dasar
         val toolbar = findViewById<Toolbar>(R.id.toolbarTask)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Detail Tugas"
-        toolbar.setNavigationOnClickListener { onBackPressed() }
+        toolbar.setNavigationOnClickListener { finish() }
 
         taskId = intent.getStringExtra("TASK_ID") ?: ""
         courseId = intent.getStringExtra("COURSE_ID") ?: ""
@@ -60,32 +65,28 @@ class TaskActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvTaskTitleDetail).text = taskTitle
         findViewById<TextView>(R.id.tvTaskDescriptionDetail).text = taskDesc
 
-        // 2. Ambil Data Tugas (Deadline & File Materi dari Dosen)
         val tvDeadline = findViewById<TextView>(R.id.tvTaskDeadline)
-        val btnDownloadMateri = findViewById<Button>(R.id.btnDownloadMateri) // Pastikan ID ini ada di layout
+        val btnDownloadMateri = findViewById<Button>(R.id.btnDownloadMateri)
 
-        dbRef.child("tasks").child(taskId).addListenerForSingleValueEvent(object : ValueEventListener {
+        // --- PERBAIKAN: Menggunakan addValueEventListener agar File Muncul Real-time ---
+        dbRef.child("tasks").child(taskId).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // Handle Deadline
-                val deadline = snapshot.child("deadline").value?.toString() ?: "Tidak ada batas waktu"
-                tvDeadline.text = "Batas Waktu: $deadline"
-                checkDeadlineLogic(deadline)
+                if (snapshot.exists()) {
+                    val deadline = snapshot.child("deadline").value?.toString() ?: "Tidak ada batas waktu"
+                    tvDeadline.text = "Batas Waktu: $deadline"
+                    checkDeadlineLogic(deadline)
 
-                // --- FITUR BARU: Download Materi dari Dosen ---
-                val materiUrl = snapshot.child("fileUrl").value?.toString()
-                val fileName = snapshot.child("fileName").value?.toString() ?: "Materi_Tugas.pdf"
+                    // Mengambil URL materi yang diupload Dosen
+                    val materiUrl = snapshot.child("fileUrl").value?.toString()
+                    val fileName = snapshot.child("fileName").value?.toString() ?: "Lampiran_Materi.pdf"
 
-                if (!materiUrl.isNullOrEmpty()) {
-                    btnDownloadMateri.visibility = View.VISIBLE
-                    btnDownloadMateri.setOnClickListener {
-                        // Opsi 1: Buka di Browser
-                        // startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(materiUrl)))
-
-                        // Opsi 2: Download Langsung ke HP
-                        downloadFile(materiUrl, fileName)
+                    if (!materiUrl.isNullOrEmpty() && materiUrl != "null") {
+                        btnDownloadMateri.visibility = View.VISIBLE
+                        btnDownloadMateri.text = "📁 Unduh Lampiran Tugas"
+                        btnDownloadMateri.setOnClickListener { downloadFile(materiUrl, fileName) }
+                    } else {
+                        btnDownloadMateri.visibility = View.GONE
                     }
-                } else {
-                    btnDownloadMateri.visibility = View.GONE
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
@@ -103,28 +104,76 @@ class TaskActivity : AppCompatActivity() {
         }
     }
 
-    // --- LOGIKA DOWNLOAD FILE ---
-    private fun downloadFile(url: String, fileName: String) {
+    private fun initCloudinary() {
         try {
-            val request = DownloadManager.Request(Uri.parse(url))
-                .setTitle(fileName)
-                .setDescription("Mengunduh materi tugas...")
-                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                .setAllowedOverMetered(true)
-                .setAllowedOverRoaming(true)
+            val config = mapOf(
+                "cloud_name" to "dhipf6bhy",
+                "api_key" to "223764587583262",
+                "api_secret" to "cT2WqtQziYY8_A7DBhTlHq_T4hc"
+            )
+            MediaManager.init(this, config)
+        } catch (e: Exception) {}
+    }
 
-            val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            manager.enqueue(request)
-            Toast.makeText(this, "Unduhan dimulai. Cek panel notifikasi.", Toast.LENGTH_LONG).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Gagal mengunduh: ${e.message}", Toast.LENGTH_SHORT).show()
-            // Fallback buka browser jika DownloadManager gagal
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    private fun uploadTask(answer: String) {
+        val progressBar = findViewById<ProgressBar>(R.id.progressBarTask)
+        val btnSubmit = findViewById<Button>(R.id.btnSubmitTask)
+
+        if (selectedFileUri != null) {
+            progressBar.visibility = View.VISIBLE
+            btnSubmit.isEnabled = false
+
+            MediaManager.get().upload(selectedFileUri)
+                .option("folder", "submissions/$taskId/")
+                .option("upload_preset", "tugas_preset")
+                .callback(object : UploadCallback {
+                    override fun onStart(requestId: String) {}
+                    override fun onProgress(requestId: String, bytes: Long, totalBytes: Long) {}
+
+                    override fun onSuccess(requestId: String, resultData: Map<*, *>) {
+                        val fileUrl = resultData["secure_url"].toString()
+                        saveSubmissionToDatabase(answer, fileUrl)
+                        runOnUiThread {
+                            progressBar.visibility = View.GONE
+                            btnSubmit.isEnabled = true
+                        }
+                    }
+
+                    override fun onError(requestId: String, error: ErrorInfo) {
+                        runOnUiThread {
+                            progressBar.visibility = View.GONE
+                            btnSubmit.isEnabled = true
+                            Toast.makeText(this@TaskActivity, "Gagal Upload: ${error.description}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+
+                    override fun onReschedule(requestId: String, error: ErrorInfo) {}
+                })
+                .dispatch()
+        } else {
+            saveSubmissionToDatabase(answer, null)
         }
     }
 
-    // --- FITUR KOMENTAR KELAS (Tetap Sama) ---
+    private fun saveSubmissionToDatabase(answer: String, fileUrl: String?) {
+        val currentUid = auth.currentUser?.uid ?: return
+        val data = mutableMapOf<String, Any?>(
+            "userId" to currentUid,
+            "userName" to (auth.currentUser?.displayName ?: "Mahasiswa"),
+            "answer" to answer,
+            "grade" to null,
+            "timestamp" to ServerValue.TIMESTAMP
+        )
+        if (fileUrl != null) data["fileUrl"] = fileUrl
+
+        dbRef.child("submissions").child(taskId).child(currentUid).setValue(data)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Tugas Berhasil Terkirim!", Toast.LENGTH_SHORT).show()
+                selectedFileUri = null
+                findViewById<TextView>(R.id.tvFileName).text = "Belum ada file dipilih"
+            }
+    }
+
     private fun setupCommentsSystem() {
         val rvComments = findViewById<RecyclerView>(R.id.rvComments)
         val etComment = findViewById<EditText>(R.id.etCommentInput)
@@ -164,115 +213,9 @@ class TaskActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkDeadlineLogic(deadlineStr: String) {
-        if (deadlineStr == "Tidak ada batas waktu") return
-        try {
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            val deadlineDate = sdf.parse(deadlineStr)
-            if (deadlineDate != null && Date().after(deadlineDate)) {
-                findViewById<Button>(R.id.btnSubmitTask)?.apply {
-                    isEnabled = false
-                    text = "Waktu Habis"
-                    setBackgroundColor(Color.GRAY)
-                }
-                findViewById<TextView>(R.id.tvTaskDeadline).setTextColor(Color.RED)
-            }
-        } catch (e: Exception) { e.printStackTrace() }
-    }
-
-    // --- UI MAHASISWA ---
-    private fun setupMahasiswaUI() {
-        val layoutMahasiswa = findViewById<LinearLayout>(R.id.layoutMahasiswa)
-        val etSubmission = findViewById<EditText>(R.id.etSubmissionText)
-        val btnSubmit = findViewById<Button>(R.id.btnSubmitTask)
-        val btnAttach = findViewById<Button>(R.id.btnUploadFile)
-        val tvStatus = findViewById<TextView>(R.id.tvGradeStatus)
-        val tvFileName = findViewById<TextView>(R.id.tvFileName)
-
-        layoutMahasiswa?.visibility = View.VISIBLE
-        val currentUid = auth.currentUser?.uid ?: return
-
-        dbRef.child("submissions").child(taskId).child(currentUid)
-            .addValueEventListener(object : ValueEventListener {
-                @SuppressLint("SetTextI18n")
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val text = snapshot.child("answer").value?.toString() ?: ""
-                        if (etSubmission.text.isEmpty()) etSubmission.setText(text)
-                        val grade = snapshot.child("grade").value
-                        var info = "Tugas selesai dikumpulkan"
-                        if (grade != null && grade.toString() != "null" && grade.toString().isNotEmpty()) {
-                            info += "\nTugas dinilai = $grade"
-                            tvStatus.setTextColor(Color.parseColor("#0F9D58"))
-                        } else {
-                            tvStatus.setTextColor(Color.BLUE)
-                        }
-                        tvStatus.text = info
-                        btnSubmit.text = "Update Tugas"
-                    } else {
-                        tvStatus.text = "Status: Belum Mengumpulkan"
-                        tvStatus.setTextColor(Color.BLACK)
-                    }
-                }
-                override fun onCancelled(error: DatabaseError) {}
-            })
-
-        btnAttach?.setOnClickListener {
-            val intent = Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" }
-            startActivityForResult(Intent.createChooser(intent, "Pilih file jawaban"), PICK_FILE_REQUEST)
-        }
-
-        btnSubmit.setOnClickListener {
-            val answer = etSubmission.text.toString().trim()
-            if (answer.isNotEmpty() || selectedFileUri != null) {
-                uploadTask(answer)
-            } else {
-                Toast.makeText(this, "Isi jawaban atau pilih file", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun uploadTask(answer: String) {
-        val currentUid = auth.currentUser?.uid ?: return
-        val storageRef = FirebaseStorage.getInstance().getReference("submissions/$taskId/$currentUid")
-
-        if (selectedFileUri != null) {
-            Toast.makeText(this, "Sedang mengirim tugas...", Toast.LENGTH_SHORT).show()
-            storageRef.putFile(selectedFileUri!!).addOnSuccessListener {
-                storageRef.downloadUrl.addOnSuccessListener { uri ->
-                    saveSubmissionToDatabase(answer, uri.toString())
-                }
-            }.addOnFailureListener {
-                Toast.makeText(this, "Gagal upload file: ${it.message}", Toast.LENGTH_SHORT).show()
-            }
-        } else {
-            saveSubmissionToDatabase(answer, null)
-        }
-    }
-
-    private fun saveSubmissionToDatabase(answer: String, fileUrl: String?) {
-        val currentUid = auth.currentUser?.uid ?: return
-        val data = mutableMapOf<String, Any?>(
-            "userId" to currentUid,
-            "userName" to (auth.currentUser?.displayName ?: "Mahasiswa"),
-            "answer" to answer,
-            "grade" to null,
-            "timestamp" to ServerValue.TIMESTAMP
-        )
-        if (fileUrl != null) data["fileUrl"] = fileUrl
-
-        dbRef.child("submissions").child(taskId).child(currentUid).setValue(data)
-            .addOnSuccessListener {
-                Toast.makeText(this, "Tugas Berhasil Dikirim!", Toast.LENGTH_SHORT).show()
-                selectedFileUri = null // Reset pilihan file setelah sukses
-            }
-    }
-
-    // --- UI DOSEN ---
     private fun setupDosenUI() {
-        val layoutDosen = findViewById<LinearLayout>(R.id.layoutDosen)
+        findViewById<LinearLayout>(R.id.layoutDosen).visibility = View.VISIBLE
         val rvSubmissions = findViewById<RecyclerView>(R.id.rvSubmissions)
-        layoutDosen?.visibility = View.VISIBLE
 
         submissionAdapter = SubmissionAdapter(submissionList) { studentData ->
             showGradeDialog(
@@ -304,7 +247,7 @@ class TaskActivity : AppCompatActivity() {
             setPadding(60, 40, 60, 40)
         }
         layout.addView(TextView(this).apply {
-            text = "Jawaban Teks:\n$ans"
+            text = "Jawaban:\n$ans"
             setTextColor(Color.BLACK)
             setPadding(0, 0, 0, 20)
         })
@@ -319,30 +262,92 @@ class TaskActivity : AppCompatActivity() {
         }
 
         val etGrade = EditText(this).apply {
-            hint = "Input Nilai (0-100)"
-            inputType = InputType.TYPE_CLASS_NUMBER
+            hint = "Masukkan Nilai"; inputType = InputType.TYPE_CLASS_NUMBER
         }
         layout.addView(etGrade)
 
         AlertDialog.Builder(this)
-            .setTitle("Penilaian: $name")
+            .setTitle("Nilai: $name")
             .setView(layout)
-            .setPositiveButton("Simpan Nilai") { _, _ ->
+            .setPositiveButton("Simpan") { _, _ ->
                 val g = etGrade.text.toString()
-                if (g.isNotEmpty()) {
-                    dbRef.child("submissions").child(taskId).child(uid).child("grade").setValue(g)
-                    Toast.makeText(this, "Nilai disimpan", Toast.LENGTH_SHORT).show()
+                if (g.isNotEmpty()) dbRef.child("submissions").child(taskId).child(uid).child("grade").setValue(g)
+            }.setNegativeButton("Batal", null).show()
+    }
+
+    private fun downloadFile(url: String, fileName: String) {
+        try {
+            val request = DownloadManager.Request(Uri.parse(url))
+                .setTitle(fileName)
+                .setDescription("Mengunduh lampiran tugas...")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            manager.enqueue(request)
+            Toast.makeText(this, "Mengunduh...", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+    }
+
+    private fun checkDeadlineLogic(deadlineStr: String) {
+        if (deadlineStr == "Tidak ada batas waktu" || deadlineStr.isEmpty()) return
+        try {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val deadlineDate = sdf.parse(deadlineStr)
+            if (deadlineDate != null && Date().after(deadlineDate)) {
+                findViewById<Button>(R.id.btnSubmitTask)?.apply {
+                    isEnabled = false
+                    text = "Waktu Habis"
+                    setBackgroundColor(Color.GRAY)
                 }
             }
-            .setNegativeButton("Batal", null)
-            .show()
+        } catch (e: Exception) {}
+    }
+
+    private fun setupMahasiswaUI() {
+        findViewById<LinearLayout>(R.id.layoutMahasiswa).visibility = View.VISIBLE
+        val etSubmission = findViewById<EditText>(R.id.etSubmissionText)
+        val btnSubmit = findViewById<Button>(R.id.btnSubmitTask)
+        val btnAttach = findViewById<Button>(R.id.btnUploadFile)
+        val tvStatus = findViewById<TextView>(R.id.tvGradeStatus)
+
+        val currentUid = auth.currentUser?.uid ?: return
+
+        dbRef.child("submissions").child(taskId).child(currentUid)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val grade = snapshot.child("grade").value
+                        tvStatus.text = if (grade != null) "Nilai Anda: $grade" else "Status: Sudah Mengumpulkan"
+                        btnSubmit.text = "Perbarui Tugas"
+                    } else {
+                        tvStatus.text = "Status: Belum Mengumpulkan"
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+
+        btnAttach.setOnClickListener {
+            val intent = Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" }
+            startActivityForResult(Intent.createChooser(intent, "Pilih file"), PICK_FILE_REQUEST)
+        }
+
+        btnSubmit.setOnClickListener {
+            val answer = etSubmission.text.toString().trim()
+            if (answer.isEmpty() && selectedFileUri == null) {
+                Toast.makeText(this, "Isi jawaban atau lampirkan file!", Toast.LENGTH_SHORT).show()
+            } else {
+                uploadTask(answer)
+            }
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PICK_FILE_REQUEST && resultCode == Activity.RESULT_OK) {
             selectedFileUri = data?.data
-            findViewById<TextView>(R.id.tvFileName).text = "File siap: ${selectedFileUri?.lastPathSegment}"
+            findViewById<TextView>(R.id.tvFileName).text = "File siap dikirim"
         }
     }
 }
