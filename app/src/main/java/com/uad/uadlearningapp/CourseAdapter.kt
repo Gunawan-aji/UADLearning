@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 class CourseAdapter(
     private var courseList: List<Course>,
     private val onDeleteClick: (String) -> Unit,
-    private val onItemClick: (Course) -> Unit // TAMBAHKAN INI
+    private val onItemClick: (Course) -> Unit
 ) : RecyclerView.Adapter<CourseAdapter.CourseViewHolder>() {
 
     class CourseViewHolder(view: View) : RecyclerView.ViewHolder(view) {

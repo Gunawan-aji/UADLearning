@@ -34,11 +34,10 @@ class SholatReceiver : BroadcastReceiver() {
 
         // 2. Putar Suara Adzan Otomatis
         try {
-            val mediaPlayer = MediaPlayer.create(context, R.raw.adzan) // Ganti 'adzan' sesuai nama file MP3-mu
+            val mediaPlayer = MediaPlayer.create(context, R.raw.adzan)
             mediaPlayer.start()
 
             // Suara akan berhenti otomatis setelah selesai,
-            // atau bisa kamu tambahkan listener untuk release memory
             mediaPlayer.setOnCompletionListener { it.release() }
         } catch (e: Exception) {
             e.printStackTrace()

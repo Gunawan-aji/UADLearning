@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     // --- LOGIKA: RINGKASAN TUGAS (Mendekati Deadline & Belum Dikerjakan) ---
-    // --- LOGIKA: RINGKASAN TUGAS (DIPERBAIKI: Hanya untuk Mahasiswa) ---
     private fun updateTaskSummary() {
         val currentUid = auth.currentUser?.uid ?: return
 

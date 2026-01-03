@@ -86,7 +86,6 @@ class AlIslamActivity : AppCompatActivity() {
 
             val intent = Intent(this, SholatReceiver::class.java).apply {
                 putExtra("SHOLAT_NAME", name)
-                // Tambahkan aksi unik agar PendingIntent dikenali sistem dengan baik
                 action = "com.uad.ACTION_SHOLAT_ALARM"
             }
 
